@@ -10,7 +10,7 @@ const bodyParser = require('body-parser');
 const port = 3000;
 
 // Setup empty JS object to act as endpoint for all routes
-projectData = { };
+projectData = {};
 
 // Start up an instance of app
 const app = express();
@@ -34,17 +34,21 @@ app.use(express.static('website'));
 const serverMessage = () =>
   console.log(`Server is up and running on http://localhost:${port}/`);
 // Callback function to complete GET '/all'
-const getProjectData = (req, res) => {
-  res.json(projectData);
-};
+const getProjectData = (req, res) => res.json({ cod: '200', ...projectData });
 // Callback function to handle post request
-const postProjectData = (req, res) => {
-  projectData = {
-    temp: req.body.temp,
-    date: req.body.date,
-    content: req.body.content,
-  };
-  res.json(projectData);
+const updateProjectData = (req, res) => {
+  const data = req?.body;
+  if (!data?.feelings?.trim()) {
+    res.status(500);
+    res.json({
+      cod: '500',
+      message: 'Feelings is missing',
+    });
+  } else {
+    projectData = { ...data };
+    res.status(200);
+    res.json({ cod: '200' });
+  }
 };
 
 /******************************************************************/
@@ -53,7 +57,7 @@ const postProjectData = (req, res) => {
 // GET Route
 app.get('/all', getProjectData);
 // POST Route
-app.post('/postData', postProjectData);
+app.post('/saveData', updateProjectData);
 /***************************************************************/
 
 // Spin up the server

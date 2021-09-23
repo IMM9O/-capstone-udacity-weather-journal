@@ -1,89 +1,124 @@
 /* Global Variables */
+const openWeatherApiUrl = 'http://api.openweathermap.org/data/2.5/forecast?id=';
+// Personal API Key for OpenWeatherMap API
+const openWeatherApiKey = '7b0a6b70ab6f91227ddea45b93964657';
+const serverUrl = `http://localhost:3000/`;
 
 // Create a new date instance dynamically with JS
-let d = new Date();
-let newDate = d.getMonth() + '.' + d.getDate() + '.' + d.getFullYear();
-// Personal API Key for OpenWeatherMap API
-const apiKey = '&appId=7b0a6b70ab6f91227ddea45b93964657&units=imperial';
-const apiUrl = `http://localhost:3000/`;
-// get HTML DOM elements
-const zipCodeElm = document.getElementById('zip');
-const feelingsElm = document.getElementById('feelings');
-const dateElm = document.getElementById('date');
-const tempElm = document.getElementById('temp');
-const contentElm = document.getElementById('content');
+const generateNewData = () => {
+  let d = new Date();
+  return `${d.getDate()}/${d.getMonth()}/${d.getFullYear()}`;
+};
+/** Set error message on UI */
+const setErrorMessage = (msg) =>
+  (document.getElementById('error-message').innerHTML = msg);
 
-// handling error
-const errorHandling = (err) => {
-  err?.message && alert(err?.message);
+const restFields = () => {
+  document.getElementById('zip').value = '';
+  document.getElementById('feelings').value = '';
 };
 
-/* Function to GET Web API Data*/
+/** Reset Most Resent entry section */
+const resetUIContent = () => {
+  document.getElementById('date').innerHTML = '';
+  document.getElementById('temp').innerHTML = '';
+  document.getElementById('content').innerHTML = '';
+};
+
+/* Final step (UpdateUI) */
+const updateUIContent = (data) => {
+  setErrorMessage('');
+  const { date, temperature, feelings, zipCode, city, country } = data;
+  document.getElementById('date').innerHTML = `Date: ${date}`;
+  document.getElementById('temp').innerHTML = `Temp: ${temperature}`;
+  document.getElementById('content').innerHTML = `Feelings: ${feelings}`;
+  document.getElementById('zipCode').innerHTML = `Zip Code: ${zipCode}`;
+  document.getElementById('city').innerHTML = `City: ${city}`;
+  document.getElementById('country').innerHTML = `Country: ${country}`;
+};
+
+/* Function to GET projectData from server */
+const getDataFromServer = async () => {
+  const response = await fetch(`${serverUrl}all`);
+  try {
+    const data = await response.json();
+    if (data?.cod !== '200') throw data; // in this case data will be for example  {cod: '404', message: 'City not found'}
+    updateUIContent(data);
+  } catch (err) {
+    setErrorMessage(err?.message);
+    resetUIContent();
+  }
+};
+
+/* Function to Save data on server */
+const saveDataToServer = async (saveData) => {
+  const response = await fetch(`${serverUrl}saveData`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(saveData),
+  });
+  try {
+    const data = await response.json();
+    if (data?.cod !== '200') throw data; // in this case data will be for example  {cod: '404', message: 'City not found'}
+    getDataFromServer();
+  } catch (err) {
+    setErrorMessage(err?.message);
+    resetUIContent();
+  }
+};
+
+/** Function to GET temp from OpenWeatherAPI */
+const getTempFromWeatherAPI = async (zipCode) => {
+  // get request
+  const response = await fetch(
+    `${openWeatherApiUrl}${zipCode}&appId=${openWeatherApiKey}`
+  );
+  try {
+    const data = await response.json(); // parses JSON response into native JavaScript objects
+    if (data?.cod !== '200') throw data; // in this case data will be for example  {cod: '404', message: 'City not found'}
+    return data;
+  } catch (err) {
+    // err object will always be { cod, message }
+    setErrorMessage(err?.message);
+    resetUIContent();
+  }
+};
+
+/** Function Click Callback */
 const onGenerateButtonClicked = () => {
-  let sendData = {
-    zipCode: zipCodeElm.value,
-    content: feelingsElm.value,
-    date: newDate,
-  };
-  getZipCodeInfo(sendData.zipCode).then((data) => {
+  const zipCode = document.getElementById('zip').value;
+  const feelings = document.getElementById('feelings').value;
+
+  if (!zipCode) {
+    setErrorMessage('Zip Code is missing you have to enter zip code to see results!');
+    return;
+  }
+  getTempFromWeatherAPI(zipCode).then((data) => {
     //Now Post Data To Server For Saving And Display In Holder Section
-    if (data && data.cod === '200') {
-      sendData.temp = data.list[0].main.temp;
-      postDataToServer(sendData);
-    }
+    data?.cod === '200' &&
+      saveDataToServer({
+        date: generateNewData(),
+        temperature: data.list[0].main.temp,
+        city: data?.city?.name,
+        country: data?.city?.country,
+        feelings,
+        zipCode,
+      });
   });
 };
 
-const getZipCodeInfo = async (zipCode) => {
-  // get request
-  try {
-    const response = await fetch(
-      `http://api.openweathermap.org/data/2.5/forecast?id=${zipCode}${apiKey}`
-    );
-    const data = await response.json(); // parses JSON response into native JavaScript objects
-    if (!response.ok) throw data;
-
-    return data;
-  } catch (err) {
-    errorHandling(err);
-  }
-};
-
-
-
-/* Function to GET Project Data */
-const getDataFromServer = async (data) => {
-  try {
-    const response = await fetch(`${apiUrl}all`);
-    const data = await response.json();
-    if (!response.ok) throw data;
-
-    dateElm.innerHTML = `Date Is: ${data.date}`;
-    tempElm.innerHTML = `Temp Is: ${data.temp}`;
-    contentElm.innerHTML = `My Feelings Is: ${data.content}`;
-  } catch (err) {
-    errorHandling(err);
-  }
-};
-
-/* Function to POST data */
-const postDataToServer = async (postData) => {
-    try {
-      const response = await fetch(`${apiUrl}postData`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(postData),
-      });
-      const data = await response.json();
-      if (!response.ok) throw data;
-  
-      getDataFromServer();
-    } catch (err) {
-      errorHandling(err);
-    }
-  };
-
 // Event listener to add function to existing HTML DOM element
-document
-  .getElementById('generate')
-  .addEventListener('click', onGenerateButtonClicked);
+const setAppListener = () => {
+  document
+    .getElementById('generate')
+    .addEventListener('click', onGenerateButtonClicked);
+};
+
+(function () {
+  restFields();
+  resetUIContent();
+  setAppListener();
+})();

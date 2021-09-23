@@ -23,6 +23,9 @@ const resetUIContent = () => {
   document.getElementById('date').innerHTML = '';
   document.getElementById('temp').innerHTML = '';
   document.getElementById('content').innerHTML = '';
+  document.getElementById('zipCode').innerHTML = '';
+  document.getElementById('city').innerHTML = '';
+  document.getElementById('country').innerHTML = '';
 };
 
 /* Final step (UpdateUI) */

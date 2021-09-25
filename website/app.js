@@ -1,5 +1,5 @@
 /* Global Variables */
-const openWeatherApiUrl = 'http://api.openweathermap.org/data/2.5/forecast?id=';
+const openWeatherApiUrl = 'http://api.openweathermap.org/data/2.5/forecast?zip=';
 // Personal API Key for OpenWeatherMap API
 const openWeatherApiKey = '7b0a6b70ab6f91227ddea45b93964657';
 const serverUrl = `http://localhost:3000/`;
@@ -36,7 +36,7 @@ const updateUIContent = (data) => {
   restFields();
   const { date, temperature, feelings, zipCode, city, country } = data;
   document.getElementById('date').innerHTML = `Date: ${date}`;
-  document.getElementById('temp').innerHTML = `Temp: ${temperature}`;
+  document.getElementById('temp').innerHTML = `Temp: ${temperature} Celsius`;
   document.getElementById('content').innerHTML = `Feelings: ${feelings}`;
   document.getElementById('zipCode').innerHTML = `Zip Code: ${zipCode}`;
   document.getElementById('city').innerHTML = `City: ${city}`;
@@ -80,7 +80,7 @@ const saveDataToServer = async (saveData) => {
 const getTempFromWeatherAPI = async (zipCode) => {
   // get request
   const response = await fetch(
-    `${openWeatherApiUrl}${zipCode}&appId=${openWeatherApiKey}`
+    `${openWeatherApiUrl}${zipCode}&appId=${openWeatherApiKey}&units=metric`
   );
   try {
     const data = await response.json(); // parses JSON response into native JavaScript objects

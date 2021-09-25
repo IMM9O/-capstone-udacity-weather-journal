@@ -7,7 +7,7 @@ const serverUrl = `http://localhost:3000/`;
 /* Create a new date instance dynamically with JS */
 const generateNewData = () => {
   let d = new Date();
-  return `${d.getDate()}/${d.getMonth()}/${d.getFullYear()}`;
+  return `${d.getDate()}/${d.getMonth() + 1 }/${d.getFullYear()}`;
 };
 
 /** Set error message on UI */

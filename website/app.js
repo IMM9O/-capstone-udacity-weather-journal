@@ -4,15 +4,17 @@ const openWeatherApiUrl = 'http://api.openweathermap.org/data/2.5/forecast?id=';
 const openWeatherApiKey = '7b0a6b70ab6f91227ddea45b93964657';
 const serverUrl = `http://localhost:3000/`;
 
-// Create a new date instance dynamically with JS
+/* Create a new date instance dynamically with JS */
 const generateNewData = () => {
   let d = new Date();
   return `${d.getDate()}/${d.getMonth()}/${d.getFullYear()}`;
 };
+
 /** Set error message on UI */
 const setErrorMessage = (msg) =>
   (document.getElementById('error-message').innerHTML = msg);
 
+/** Reset Input fields */
 const restFields = () => {
   document.getElementById('zip').value = '';
   document.getElementById('feelings').value = '';
@@ -31,6 +33,7 @@ const resetUIContent = () => {
 /* Final step (UpdateUI) */
 const updateUIContent = (data) => {
   setErrorMessage('');
+  restFields();
   const { date, temperature, feelings, zipCode, city, country } = data;
   document.getElementById('date').innerHTML = `Date: ${date}`;
   document.getElementById('temp').innerHTML = `Temp: ${temperature}`;
@@ -46,7 +49,7 @@ const getDataFromServer = async () => {
   try {
     const data = await response.json();
     if (data?.cod !== '200') throw data; // in this case data will be for example  {cod: '404', message: 'City not found'}
-    updateUIContent(data);
+    else updateUIContent(data);
   } catch (err) {
     setErrorMessage(err?.message);
     resetUIContent();
@@ -66,7 +69,7 @@ const saveDataToServer = async (saveData) => {
   try {
     const data = await response.json();
     if (data?.cod !== '200') throw data; // in this case data will be for example  {cod: '404', message: 'City not found'}
-    getDataFromServer();
+    else getDataFromServer();
   } catch (err) {
     setErrorMessage(err?.message);
     resetUIContent();
@@ -82,7 +85,7 @@ const getTempFromWeatherAPI = async (zipCode) => {
   try {
     const data = await response.json(); // parses JSON response into native JavaScript objects
     if (data?.cod !== '200') throw data; // in this case data will be for example  {cod: '404', message: 'City not found'}
-    return data;
+    else return data;
   } catch (err) {
     // err object will always be { cod, message }
     setErrorMessage(err?.message);
@@ -91,26 +94,27 @@ const getTempFromWeatherAPI = async (zipCode) => {
 };
 
 /** Function Click Callback */
-const onGenerateButtonClicked = () => {
+const onGenerateButtonClicked = async () => {
   const zipCode = document.getElementById('zip').value;
   const feelings = document.getElementById('feelings').value;
 
   if (!zipCode) {
-    setErrorMessage('Zip Code is missing you have to enter zip code to see results!');
+    setErrorMessage(
+      'Zip Code is missing you have to enter zip code to see results!'
+    );
     return;
   }
-  getTempFromWeatherAPI(zipCode).then((data) => {
-    //Now Post Data To Server For Saving And Display In Holder Section
-    data?.cod === '200' &&
-      saveDataToServer({
-        date: generateNewData(),
-        temperature: data.list[0].main.temp,
-        city: data?.city?.name,
-        country: data?.city?.country,
-        feelings,
-        zipCode,
-      });
-  });
+  //Now Post Data To Server For Saving And Display In Holder Section
+  const data = await getTempFromWeatherAPI(zipCode);
+  data?.cod === '200' &&
+    saveDataToServer({
+      date: generateNewData(),
+      temperature: data.list[0].main.temp,
+      city: data?.city?.name,
+      country: data?.city?.country,
+      feelings,
+      zipCode,
+    });
 };
 
 // Event listener to add function to existing HTML DOM element
